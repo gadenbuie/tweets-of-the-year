@@ -1,11 +1,11 @@
 
-<center>
+<div style="text-align: center">
 
 # Your 2019 on Twitter
 
 ### A fun little [Shiny] app inspired by a [tweet by &commat;nnstats][nnstats].
 
-</center>
+</div>
 
 ---
 
