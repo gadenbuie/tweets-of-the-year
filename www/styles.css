@@ -1,0 +1,123 @@
+html, body {
+  color: #40514e!important;
+  background-color: #f5f5f5;
+}
+
+h1, h2, h3 {
+  font-family: Montserrat;
+  color: #1DA1F2;
+}
+.tweets-tables {
+  font-family: Montserrat;
+}
+
+a {
+  color: #cb3b3b;
+}
+
+.container-fluid {
+  max-width: 1000px;
+}
+
+.number-container {
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: #5d5d5a;
+}
+
+.number {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 3em;
+  width: 100%;
+  font-family: Oswald;
+  color: #40514e;
+}
+
+.number-label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  width: 100%;
+}
+
+.number-icon {
+  font-size: 2em;
+}
+
+.best-tweet-stat {
+  display: flex;
+  gap: 2em;
+  justify-content: center;
+  font-size: 1.5em;
+}
+
+.best-tweet-stat > div + div {
+  margin-left: 2em;
+}
+
+.search-screen-name {
+  width: max-content;
+  margin: 2em auto;
+}
+
+.tweets-most .twitter-tweet {
+  margin: auto auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.twitter-blue {
+  color: #1DA1F2;
+}
+
+.spin {
+  width: 1.5em;
+  height: 2em;
+  animation: spin 1.75s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotateY(720deg);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fadeIn {
+  animation: fadeIn 1s ease-in;
+}
+
+.tweets-tables table {
+  margin: 1em auto;
+  width: 100%;
+  max-width: 300px;
+  font-size: 125%;
+}
+
+.tweets-tables .table > tbody > tr > td {
+  border-top: 0;
+}
+
+.red {
+  color: #d33f49;
+}
+
+.footer {
+  text-align: center;
+  width: 100%;
+  margin-top: 2em;
+}
