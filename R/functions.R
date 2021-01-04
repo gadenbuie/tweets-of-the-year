@@ -1,7 +1,15 @@
 library(rtweet)
 
-start_2019 <- strptime("2019-01-01 00:00:00", "%F %T", tz = "UTC")
-end_2019 <- strptime("2020-01-01 00:00:00", "%F %T", tz = "UTC")
+THIS_MONTH <- as.numeric(strftime(Sys.time(), "%m"))
+THIS_YEAR <- as.numeric(strftime(Sys.time(), "%Y"))
+if (THIS_MONTH < 6) THIS_YEAR <- THIS_YEAR - 1
+
+glue_year <- function(...) {
+  glue::glue(..., .year = THIS_YEAR)
+}
+
+start_year <- strptime(glue_year("{.year}-01-01 00:00:00"), "%F %T", tz = "UTC")
+end_year <- strptime(glue_year("{.year}-12-31 23:59:59"), "%F %T", tz = "UTC")
 
 check_rate_limit <- function(query = "statuses/user_timeline") {
   now <- Sys.time()
@@ -57,19 +65,19 @@ user_info <- function(tw) {
   as.list(u)
 }
 tweet_stats <- function(tw) {
-  tw_2019 <- tw[tw$created_at >= start_2019 & tw$created_at < end_2019, ]
-  tw_best_favorite <- best(tw_2019, "favorite")
-  tw_best_retweet <- best(tw_2019, "retweet")
+  tw_year <- tw[tw$created_at >= start_year & tw$created_at <= end_year, ]
+  tw_best_favorite <- best(tw_year, "favorite")
+  tw_best_retweet <- best(tw_year, "retweet")
   list(
     user = user_info(tw),
-    has_tweet_prior_2019 = any(tw$created_at < start_2019),
-    created_at_min = min(tw_2019$created_at),
-    created_at_max = max(tw_2019$created_at),
-    n = nrow(tw_2019[!tw_2019$is_retweet, ]),
-    favorite_count = sum_(tw_2019$favorite_count),
-    retweet_count = sum_(tw_2019$retweet_count),
-    quote_count = sum_(tw_2019$quote_count),
-    reply_count = sum_(tw_2019$reply_count),
+    has_tweet_prior_year = any(tw$created_at < start_year),
+    created_at_min = min(tw_year$created_at),
+    created_at_max = max(tw_year$created_at),
+    n = nrow(tw_year[!tw_year$is_retweet, ]),
+    favorite_count = sum_(tw_year$favorite_count),
+    retweet_count = sum_(tw_year$retweet_count),
+    quote_count = sum_(tw_year$quote_count),
+    reply_count = sum_(tw_year$reply_count),
     best_favorite = list(
       status_id = tw_best_favorite$status_id,
       url = tw_best_favorite$status_url,
@@ -82,7 +90,7 @@ tweet_stats <- function(tw) {
       favorite_count = tw_best_retweet$favorite_count,
       retweet_count = tw_best_retweet$retweet_count
     ),
-    hashtags = hashtags(tw_2019$hashtags),
-    mentions = mentions(tw_2019$mentions_screen_name)
+    hashtags = hashtags(tw_year$hashtags),
+    mentions = mentions(tw_year$mentions_screen_name)
   )
 }
