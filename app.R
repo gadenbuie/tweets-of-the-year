@@ -34,7 +34,7 @@ ui <-
     metathis::meta_social(
       title = glue_year("Your {.year} on Twitter"),
       description = "Look back on your year online: your best tweets, friends, favorite hashtags and more.",
-      image = "https://gadenbuie.shinyapps.io/tweets-of-the-year/og-preview.png",
+      image = "https://gadenbuie.shinyapps.io/tweets-of-the-year/og-preview.jpg",
       twitter_card_type = "summary_large_image",
       twitter_creator = "grrrck"
     ),

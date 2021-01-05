@@ -8,7 +8,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-![](www/og-preview.png)
+![](www/og-preview.jpg)
 
 ---
 
