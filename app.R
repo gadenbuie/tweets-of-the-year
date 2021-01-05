@@ -45,6 +45,7 @@ ui <-
         <link href='https://fonts.googleapis.com/css?family=Lora:400italic' rel='stylesheet' type='text/css'>
         <link href='https://fonts.googleapis.com/css?family=Montserrat:400' rel='stylesheet' type='text/css'>"
       ),
+      tags$title(glue_year("{.year} on Twitter")),
       tags$link(href = "styles.css", rel = "stylesheet")
     ),
     fluidRow(
