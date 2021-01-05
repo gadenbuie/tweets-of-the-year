@@ -278,6 +278,7 @@ server <- function(input, output, session) {
   output$most_mentioned <- renderTable({
     req(!rv$tweets$error)
     mentions <- rv$tweets$mentions
+    validate(need(length(mentions) > 0, glue::glue("@{input$screen_name} didn't mention anyone else.")))
     req(mentions[[1]])
     x <- data.frame(
       screen_name = purrr::map_chr(mentions, "screen_name"),
@@ -294,6 +295,7 @@ server <- function(input, output, session) {
   output$most_hashtagged <- renderTable({
     req(!rv$tweets$error)
     hashtags <- rv$tweets$hashtags
+    validate(need(length(hashtags) > 0, glue::glue("@{input$screen_name} didn't use any hashtags.")))
     req(hashtags[[1]])
     x <- data.frame(
       hashtag = purrr::map_chr(hashtags, "hashtag"),
