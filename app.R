@@ -1,6 +1,8 @@
 library(shiny)
 library(purrr)
 library(memoise)
+library(glue)
+library(metricsgraphics)
 
 source("R/functions.R")
 get_tweets <- memoise(get_user_tweets, cache = cache_filesystem(".tweets"))
@@ -30,9 +32,9 @@ number_div <- function(x, label, icon = "heart", ...) {
 ui <-
   fluidPage(
     metathis::meta_social(
-      title = "Your 2019 on Twitter",
+      title = glue_year("Your {.year} on Twitter"),
       description = "Look back on your year online: your best tweets, friends, favorite hashtags and more.",
-      image = "https://gadenbuie.shinyapps.io/tweets-of-2019/og-preview.png",
+      image = "https://gadenbuie.shinyapps.io/tweets-of-the-year/og-preview.jpg",
       twitter_card_type = "summary_large_image",
       twitter_creator = "grrrck"
     ),
@@ -43,12 +45,17 @@ ui <-
         <link href='https://fonts.googleapis.com/css?family=Lora:400italic' rel='stylesheet' type='text/css'>
         <link href='https://fonts.googleapis.com/css?family=Montserrat:400' rel='stylesheet' type='text/css'>"
       ),
+      tags$title(glue_year("{.year} on Twitter")),
       tags$link(href = "styles.css", rel = "stylesheet")
     ),
     fluidRow(
       div(
         class = "col-xs-12",
-        h1("In Review: Your 2019 on Twitter", class = "text-center"),
+        h1(
+          glue_year("In Review: Your {.year} on Twitter"),
+          id = "user-year-title",
+          class = "text-center"
+        ),
         withTags(
           form(
             class = "form-inline search-screen-name",
@@ -79,7 +86,7 @@ ui <-
         div(
           id = "error-bad-user",
           class = "help-block red text-center hidden",
-          "That user doesn't exist or didn't tweet in 2019."
+          glue_year("That user doesn't exist or didn't tweet in {.year}.")
         ),
         div(
           id = "error-protected-user",
@@ -94,7 +101,7 @@ ui <-
       span(class = "spin", icon("twitter", class = "fa-lg twitter-blue")),
       "Looking up",
       span(id = "searching_screen_name", HTML("&commat;SCREEN_NAME"), .noWS = "after"),
-      "'s tweets from 2019..."
+      glue_year("'s tweets from {.year}...")
     ),
     div(
       id = "search-results",
@@ -102,16 +109,20 @@ ui <-
       fluidRow(
         number_div(
           countup::countupOutput("count_tweets"), "tweets", "twitter",
-          title = "Number of original tweets in 2019"
+          title = glue_year("Number of original tweets in {.year}")
         ),
         number_div(
           countup::countupOutput("count_likes"), "favorites", "heart",
-          title = "Number of times this user's tweets were favorited in 2019"
+          title = glue_year("Number of times this user's tweets were favorited in {.year}")
         ),
         number_div(
           countup::countupOutput("count_retweets"), "retweets", "recycle",
-          title = "Number of times this user's tweets were retweeted in 2019"
+          title = glue_year("Number of times this user's tweets were retweeted in {.year}")
         )
+      ),
+      fluidRow(
+        class = "tweets-calendar",
+        metricsgraphicsOutput("tweets_calendar", height = "200px")
       ),
       fluidRow(
         class = "tweets-most",
@@ -182,6 +193,7 @@ server <- function(input, output, session) {
       } else {
         session$sendCustomMessage("show", list(show = TRUE))
         session$sendCustomMessage("newScreenName", sn)
+        session$sendCustomMessage("updateYourYearTitle", list(screenName = sn, year = THIS_YEAR))
         rv$last <- list(
           count = rv$tweets$n,
           likes = rv$tweets$favorite_count,
@@ -194,6 +206,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("show", list(show = FALSE))
       session$sendCustomMessage("show", list(show = TRUE, id = "error-bad-user"))
       rv$tweets <- list(error = TRUE, rate_limit = FALSE, msg = tw$error)
+      drop_cache(get_tweets)(input$screen_name)
     }
   })
 
@@ -202,7 +215,7 @@ server <- function(input, output, session) {
     countup::countup(
       count = rv$tweets$n,
       start_at = rv$last$count,
-      options = list(suffix = if (!rv$tweets$has_tweet_prior_2019) "+")
+      options = list(suffix = if (!rv$tweets$has_tweet_prior_year) "+")
     )
   })
   outputOptions(output, "count_tweets", suspendWhenHidden = FALSE)
@@ -273,6 +286,7 @@ server <- function(input, output, session) {
   output$most_mentioned <- renderTable({
     req(!rv$tweets$error)
     mentions <- rv$tweets$mentions
+    validate(need(length(mentions) > 0, glue::glue("@{input$screen_name} didn't mention anyone else.")))
     req(mentions[[1]])
     x <- data.frame(
       screen_name = purrr::map_chr(mentions, "screen_name"),
@@ -289,6 +303,7 @@ server <- function(input, output, session) {
   output$most_hashtagged <- renderTable({
     req(!rv$tweets$error)
     hashtags <- rv$tweets$hashtags
+    validate(need(length(hashtags) > 0, glue::glue("@{input$screen_name} didn't use any hashtags.")))
     req(hashtags[[1]])
     x <- data.frame(
       hashtag = purrr::map_chr(hashtags, "hashtag"),
@@ -302,7 +317,19 @@ server <- function(input, output, session) {
   }, rownames = FALSE, sanitize.text.function = function(x) x, width = "100%", align = "lc")
   outputOptions(output, "most_hashtagged", suspendWhenHidden = FALSE)
 
+  output$tweets_calendar <- renderMetricsgraphics({
+    req(!rv$tweets$error, !is.null(rv$tweets$calendar))
 
+    rv$tweets$calendar %>%
+      mjs_plot(x = date, y = n_tweets, left = 28, right = 14, top = 0, bottom = 28) %>%
+      mjs_line(area = TRUE, color = "#cb3b3b") %>%
+      mjs_axis_x(xax_format = "date") %>%
+      mjs_add_mouseover(
+        "function(d, i) {
+           $('#tweets_calendar svg .mg-active-datapoint')
+             .text(d.date.toDateString() + ' - ' + d.n_tweets + ' tweets');
+         }")
+  })
 }
 
 shinyApp(ui, server, enableBookmarking = "url")

@@ -102,3 +102,15 @@ const joinLikedRetweeted = (join) => {
 }
 
 Shiny.addCustomMessageHandler('joinLikedRetweeted', joinLikedRetweeted)
+
+Shiny.addCustomMessageHandler('updateYourYearTitle', function ({screenName, year}) {
+  const heading = document.getElementById('user-year-title')
+  year = year || new Date().getUTCFullYear() - 1
+  if (screenName) {
+    heading.innerHTML = `In Review: <strong>@${screenName}</strong>'s ${year} on Twitter`
+    document.title = `${year} on Twitter | @${screenName}`
+  } else {
+    heading.innerText = 'In Review: Your ${year} on Twitter'
+    document.title = `${year} on Twitter`
+  }
+})
