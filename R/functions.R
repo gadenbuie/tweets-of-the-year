@@ -91,6 +91,30 @@ tweet_stats <- function(tw) {
       retweet_count = tw_best_retweet$retweet_count
     ),
     hashtags = hashtags(tw_year$hashtags),
-    mentions = mentions(tw_year$mentions_screen_name)
+    mentions = mentions(tw_year$mentions_screen_name),
+    calendar = tweet_count_by_day(tw_year)
   )
+}
+
+tweet_count_by_day <- function(tw) {
+  tw <- as.data.frame(table(as.Date(tw$created_at)), stringsAsFactors = FALSE)
+  names(tw) <- c("date", "n_tweets")
+  tw$date <- as.Date(tw$date)
+
+  base <- data.frame(
+    date = seq(as.Date(start_year), min(as.Date(end_year), Sys.Date()), by = "day"),
+    n_tweets = 0,
+    stringsAsFactors = FALSE
+  )
+
+  # user tweets more than once every three days on average
+  days_in_tweet_range <- as.numeric(diff(range(tw$date)))
+  if (nrow(tw) / days_in_tweet_range > 0.33) {
+    return(tw)
+  }
+
+  # fill in 0 days for low-volume tweeters
+  tw <- rbind(tw, base)
+  tw[!duplicated(tw$date), ]
+  tw[order(tw$date), ]
 }

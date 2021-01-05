@@ -2,6 +2,7 @@ library(shiny)
 library(purrr)
 library(memoise)
 library(glue)
+library(metricsgraphics)
 
 source("R/functions.R")
 get_tweets <- memoise(get_user_tweets, cache = cache_filesystem(".tweets"))
@@ -116,6 +117,10 @@ ui <-
           countup::countupOutput("count_retweets"), "retweets", "recycle",
           title = glue_year("Number of times this user's tweets were retweeted in {.year}")
         )
+      ),
+      fluidRow(
+        class = "tweets-calendar",
+        metricsgraphicsOutput("tweets_calendar", height = "200px")
       ),
       fluidRow(
         class = "tweets-most",
@@ -309,7 +314,19 @@ server <- function(input, output, session) {
   }, rownames = FALSE, sanitize.text.function = function(x) x, width = "100%", align = "lc")
   outputOptions(output, "most_hashtagged", suspendWhenHidden = FALSE)
 
+  output$tweets_calendar <- renderMetricsgraphics({
+    req(!rv$tweets$error, !is.null(rv$tweets$calendar))
 
+    rv$tweets$calendar %>%
+      mjs_plot(x = date, y = n_tweets, left = 28, right = 14, top = 0, bottom = 28) %>%
+      mjs_line(area = TRUE, color = "#cb3b3b") %>%
+      mjs_axis_x(xax_format = "date") %>%
+      mjs_add_mouseover(
+        "function(d, i) {
+           $('#tweets_calendar svg .mg-active-datapoint')
+             .text(d.date.toDateString() + ' - ' + d.n_tweets + ' tweets');
+         }")
+  })
 }
 
 shinyApp(ui, server, enableBookmarking = "url")
