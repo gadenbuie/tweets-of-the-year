@@ -51,7 +51,8 @@ ui <-
       div(
         class = "col-xs-12",
         h1(
-          sprintf("In Review: Your %d on Twitter", THIS_YEAR),
+          glue_year("In Review: Your {.year} on Twitter"),
+          id = "user-year-title",
           class = "text-center"
         ),
         withTags(
@@ -191,6 +192,7 @@ server <- function(input, output, session) {
       } else {
         session$sendCustomMessage("show", list(show = TRUE))
         session$sendCustomMessage("newScreenName", sn)
+        session$sendCustomMessage("updateYourYearTitle", list(screenName = sn, year = THIS_YEAR))
         rv$last <- list(
           count = rv$tweets$n,
           likes = rv$tweets$favorite_count,
