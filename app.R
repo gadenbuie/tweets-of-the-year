@@ -198,6 +198,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("show", list(show = FALSE))
       session$sendCustomMessage("show", list(show = TRUE, id = "error-bad-user"))
       rv$tweets <- list(error = TRUE, rate_limit = FALSE, msg = tw$error)
+      drop_cache(get_tweets)(input$screen_name)
     }
   })
 
