@@ -1,10 +1,13 @@
+$(document).on('shiny:sessioninitialized', function() {
+  Shiny.setInputValue('browser_tz', Intl.DateTimeFormat().resolvedOptions().timeZone)
+})
+
 const showElement = ({show = true, id = 'search-results'}) => {
   const el = document.getElementById(id)
   show ? el.removeAttribute('hidden') : el.setAttribute('hidden', true)
 }
 
 Shiny.addCustomMessageHandler('show', showElement)
-
 
 let showWaitingMessageTimeout = null
 

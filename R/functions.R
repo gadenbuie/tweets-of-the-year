@@ -86,10 +86,21 @@ user_info <- function(tw) {
 status_url <- function(tw) {
   sprintf("https://twitter.com/%s/status/%s", tw$screen_name, tw$id_str)
 }
-tweet_stats <- function(tw) {
+tweet_stats <- function(tw, tz = "UTC") {
+  start_year <- start_year
+  end_year <- end_year
+
+  if (!is.null(tz) && tz %in% OlsonNames()) {
+    attr(tw$created_at, "tzone") <- tz
+    attr(start_year, "tzone") <- tz
+    attr(end_year, "tzone") <- tz
+  }
+
   tw_year <- tw[tw$created_at >= start_year & tw$created_at <= end_year, ]
+
   tw_best_favorite <- best(tw_year, "favorite")
   tw_best_retweet <- best(tw_year, "retweet")
+
   list(
     user = user_info(tw),
     has_tweet_prior_year = any(tw$created_at < start_year),

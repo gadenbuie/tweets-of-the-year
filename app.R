@@ -138,16 +138,16 @@ ui <-
           title = glue_year("Number of times this user's tweets were retweeted in {.year}")
         ),
         number_div(
-          uiOutput("favorite_day", inline = TRUE), "favorite day", "calendar",
-          title = glue_year("Favorite day to tweet in {.year}")
+          countup::countupOutput("count_days"), "tweeting days", "calendar-check",
+          title = glue_year("Number of days with tweets in {.year}")
         ),
         number_div(
           uiOutput("streak", inline = TRUE), "longest streak", "bolt",
           title = glue_year("Longest streak of consecutive tweeting days in a row in {.year}")
         ),
         number_div(
-          countup::countupOutput("count_days"), "tweeting days", "calendar-check",
-          title = glue_year("Number of days with tweets in {.year}")
+          uiOutput("favorite_day", inline = TRUE), "favorite day", "calendar",
+          title = glue_year("Favorite day to tweet in {.year}")
         )
       ),
       fluidRow(
@@ -204,9 +204,12 @@ ui <-
   )
 
 server <- function(input, output, session) {
-  rv <- reactiveValues(tweets = list(error = TRUE), last = list(count = 0, likes = 0, retweets = 0))
+  rv <- reactiveValues(
+    tweets = list(error = TRUE),
+    last = list(count = 0, likes = 0, retweets = 0)
+  )
 
-  observeEvent(input$search + input[["__key_search"]], {
+  observeEvent(paste(input$search, input[["__key_search"]], input$browser_tz), {
     sn <- input$screen_name
     sn <- trimws(sn)
     if (sn == "") return(list(error = TRUE))
@@ -215,6 +218,7 @@ server <- function(input, output, session) {
       session$sendCustomMessage("show", list(show = TRUE, id = "error-rate-limit"))
       rv$tweets <- list(error = TRUE, rate_limit = TRUE, msg = rl$reset_at)
     }
+
     session$sendCustomMessage("show", list(show = FALSE, id = "error-rate-limit"))
     session$sendCustomMessage("show", list(show = FALSE, id = "error-bad-user"))
     session$sendCustomMessage("show", list(show = FALSE, id = "error-protected-user"))
@@ -224,7 +228,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("showWaiting", list(show = FALSE))
 
     if (is.null(tw$error) && nrow(tw$result)) {
-      ts <- tweet_stats(tw$result)
+      ts <- tweet_stats(tw$result, tz = input$browser_tz)
       if (any(user_info(tw$result)$protected)) {
         session$sendCustomMessage("show", list(show = TRUE, id = "error-protected-user"))
       } else {
