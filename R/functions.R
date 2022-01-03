@@ -156,7 +156,10 @@ tweet_count_by_day <- function(tw) {
 }
 
 tweet_favorite_day <- function(tw) {
-  days <- as.data.frame(table(strftime(tw$created_at, "%A")), stringsAsFactors = FALSE)
+  days <- as.data.frame(
+    table(strftime(tw$created_at, "%A", tz = attr(tw$created_at, "tzone"))),
+    stringsAsFactors = FALSE
+  )
   names(days) <- c("day", "n_tweets")
   days$day <- factor(
     days$day,
