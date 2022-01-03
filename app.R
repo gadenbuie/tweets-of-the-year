@@ -1,8 +1,16 @@
 library(shiny)
 library(purrr)
+library(dplyr)
 library(memoise)
 library(glue)
 library(metricsgraphics)
+
+# auth with twitter
+library(rtweet)
+if (!file.exists(".auth.rds")) {
+  stop("Must provide bearer token in `.auth.rds`, see https://docs.ropensci.org/rtweet/articles/auth.html")
+}
+auth_as(readRDS(".auth.rds"))
 
 source("R/functions.R")
 get_tweets <- memoise(get_user_tweets, cache = cache_filesystem(".tweets"))
@@ -31,6 +39,7 @@ number_div <- function(x, label, icon = "heart", ...) {
 
 ui <-
   fluidPage(
+    theme = bslib::bs_theme(version = 5, "vapor"),
     metathis::meta_social(
       title = glue_year("Your {.year} on Twitter"),
       description = "Look back on your year online: your best tweets, friends, favorite hashtags and more.",
@@ -70,42 +79,51 @@ ui <-
                 ),
                 div(
                   class = "input-group shiny-input-container",
-                  div(class = "input-group-addon", HTML("&commat;")),
-                  input(id = "screen_name", type = "text", class = "form-control", placeholder = "Twitter User Name", value = "")
+                  span(class = "input-group-text", "@"),
+                  input(id = "screen_name", type = "text", class = "form-control", placeholder = "Twitter User Name", value = ""),
+                  button(id = "search", type = "button", class = "btn btn-primary pull-right action-button", "Search")
                 )
-              ),
-              button(id = "search", type = "button", class = "btn btn-default pull-right action-button", "Search")
+              )
             )
           )
         ),
         div(
           id = "error-rate-limit",
-          class = "help-block red text-center hidden",
+          class = "help-block red text-center",
+          hidden = NA,
           "Oh oh, I'm over the rate limit. Please try again in a few minutes."
         ),
         div(
           id = "error-bad-user",
-          class = "help-block red text-center hidden",
+          class = "help-block red text-center",
+          hidden = NA,
           glue_year("That user doesn't exist or didn't tweet in {.year}.")
         ),
         div(
           id = "error-protected-user",
-          class = "help-block red text-center hidden",
+          class = "help-block red text-center",
+          hidden = NA,
           "That account is protected."
         )
       )
     ),
     div(
       id = "searching-for-tweets",
-      class = "text-center fadeIn hidden",
-      span(class = "spin", icon("twitter", class = "fa-lg twitter-blue")),
-      "Looking up",
-      span(id = "searching_screen_name", HTML("&commat;SCREEN_NAME"), .noWS = "after"),
-      glue_year("'s tweets from {.year}...")
+      class = "text-center",
+      hidden = NA,
+      div(
+        class = "fadeIn",
+        span(class = "spin", icon("twitter", class = "fa-lg twitter-blue")),
+        "Looking up",
+        span(id = "searching_screen_name", HTML("&commat;SCREEN_NAME"), .noWS = "after"),
+        glue_year("'s tweets from {.year}...")
+      ),
+      HTML('<div class="searching-hold-please fadeIn">Hang on, this could take a little longer...</div>')
     ),
     div(
       id = "search-results",
-      class = "fadeIn hidden",
+      class = "fadeIn",
+      hidden = NA,
       fluidRow(
         number_div(
           countup::countupOutput("count_tweets"), "tweets", "twitter",
@@ -118,6 +136,18 @@ ui <-
         number_div(
           countup::countupOutput("count_retweets"), "retweets", "recycle",
           title = glue_year("Number of times this user's tweets were retweeted in {.year}")
+        ),
+        number_div(
+          uiOutput("favorite_day", inline = TRUE), "favorite day", "calendar",
+          title = glue_year("Favorite day to tweet in {.year}")
+        ),
+        number_div(
+          uiOutput("streak", inline = TRUE), "longest streak", "bolt",
+          title = glue_year("Longest streak of consecutive tweeting days in a row in {.year}")
+        ),
+        number_div(
+          countup::countupOutput("count_days"), "tweeting days", "calendar-check",
+          title = glue_year("Number of days with tweets in {.year}")
         )
       ),
       fluidRow(
@@ -125,7 +155,7 @@ ui <-
         metricsgraphicsOutput("tweets_calendar", height = "200px")
       ),
       fluidRow(
-        class = "tweets-most",
+        class = "tweets-most justify-content-center",
         col_2(
           h2("Most Liked", class = "text-center"),
           uiOutput("most_liked")
@@ -147,8 +177,8 @@ ui <-
         )
       )
     ),
-    div(
-      class = "footer",
+    tags$footer(
+      class = "footer sticky-bottom",
       p(
         HTML(
           "Made with &#x2764;&#xFE0F; and &#x2615; by",
@@ -160,7 +190,14 @@ ui <-
         tags$a(href = "https://shiny.rstudio.com", "shiny", .noWS = "after"),
         ", and",
         tags$a(href = "https://github.com/JohnCoene/countup", "countup", .noWS = "after"),
-        "."
+        ".",
+        tags$br(),
+        tags$a(
+          href = "https://github.com/gadenbuie/tweets-of-the-year",
+          icon("github"),
+          target = "_blank",
+          "gadenbuie/tweets-of-the-year"
+        )
       )
     ),
     includeScript("script.js")
@@ -186,9 +223,9 @@ server <- function(input, output, session) {
     tw <- get_tweets(sn)
     session$sendCustomMessage("showWaiting", list(show = FALSE))
 
-    if (is.null(tw$error) & nrow(tw$result)) {
+    if (is.null(tw$error) && nrow(tw$result)) {
       ts <- tweet_stats(tw$result)
-      if (ts$user$protected) {
+      if (any(user_info(tw$result)$protected)) {
         session$sendCustomMessage("show", list(show = TRUE, id = "error-protected-user"))
       } else {
         session$sendCustomMessage("show", list(show = TRUE))
@@ -250,7 +287,7 @@ server <- function(input, output, session) {
           rv$tweets$best_favorite$retweet_count
         )
       ),
-      tweetrmd::tweet_embed(url, omit_script = FALSE)
+      tweetrmd::tweet_embed(url, omit_script = FALSE, theme = "dark")
     )
   })
   outputOptions(output, "most_liked", suspendWhenHidden = FALSE)
@@ -278,7 +315,7 @@ server <- function(input, output, session) {
           rv$tweets$best_retweet$retweet_count
         )
       ),
-      tweetrmd::tweet_embed(url, omit_script = FALSE)
+      tweetrmd::tweet_embed(url, omit_script = FALSE, theme = "dark")
     )
   })
   outputOptions(output, "most_retweeted", suspendWhenHidden = FALSE)
@@ -322,7 +359,7 @@ server <- function(input, output, session) {
 
     rv$tweets$calendar %>%
       mjs_plot(x = date, y = n_tweets, left = 28, right = 14, top = 0, bottom = 28) %>%
-      mjs_line(area = TRUE, color = "#cb3b3b") %>%
+      mjs_line(area = TRUE, color = "var(--bs-pink)") %>%
       mjs_axis_x(xax_format = "date") %>%
       mjs_add_mouseover(
         "function(d, i) {
@@ -330,6 +367,30 @@ server <- function(input, output, session) {
              .text(d.date.toDateString() + ' - ' + d.n_tweets + ' tweets');
          }")
   })
+
+  output$favorite_day <- renderUI({
+    req(!rv$tweets$error, !is.null(rv$tweets$dow))
+
+    rv$tweets$dow %>%
+      slice_max(n_tweets, n = 1, with_ties = FALSE) %>%
+      pull(day)
+  })
+
+  output$streak <- renderUI({
+    req(!rv$tweets$error, !is.null(rv$tweets$streak))
+
+    top <- rv$tweets$streak[1, ]
+    days <- ngettext(top$n, "day", "days")
+
+    paste(top$n, days)
+  })
+
+  output$count_days <- countup::renderCountup({
+    req(!rv$tweets$error, !is.null(rv$tweets$days_year))
+
+    countup::countup(rv$tweets$days_year$tweeted, start_at = 0)
+  })
+  outputOptions(output, "count_days", suspendWhenHidden = FALSE)
 }
 
 shinyApp(ui, server, enableBookmarking = "url")

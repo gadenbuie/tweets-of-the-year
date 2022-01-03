@@ -1,22 +1,6 @@
-html, body {
-  color: #40514e!important;
-  background-color: #f5f5f5;
-}
-
-h1, h2, h3 {
-  font-family: Montserrat;
-  color: #1DA1F2;
-}
-.tweets-tables {
-  font-family: Montserrat;
-}
-
-a {
-  color: #cb3b3b;
-}
-
 .container-fluid {
   max-width: 1000px;
+  min-height: 100vh;
 }
 
 .number-container {
@@ -25,7 +9,7 @@ a {
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  color: #5d5d5a;
+  margin-bottom: 4em;
 }
 
 .number {
@@ -35,7 +19,6 @@ a {
   font-size: 3em;
   width: 100%;
   font-family: Oswald;
-  color: #40514e;
 }
 
 .number-label {
@@ -93,8 +76,14 @@ a {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fadeIn {
@@ -120,4 +109,20 @@ a {
   text-align: center;
   width: 100%;
   margin-top: 2em;
+}
+
+.searching-hold-please.fadeIn {
+  opacity: 0;
+  animation-delay: 10s;
+  animation-fill-mode: forwards;
+}
+
+.mg-x-axis text,
+.mg-y-axis text,
+.mg-histogram .axis text {
+  fill: var(--bs-blue);
+}
+
+.mg-active-datapoint {
+  fill: var(--bs-secondary);
 }

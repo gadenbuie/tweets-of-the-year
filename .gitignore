@@ -3,6 +3,7 @@
 .RData
 .DS_Store
 .rtweet_token*
+.auth.rds
 .tweets*
 
 # Directories that start with _

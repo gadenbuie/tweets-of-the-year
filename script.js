@@ -1,6 +1,6 @@
 const showElement = ({show = true, id = 'search-results'}) => {
-  console.log('got message: ${show} at ${ts}')
-  document.getElementById(id).classList.toggle('hidden', !show)
+  const el = document.getElementById(id)
+  show ? el.removeAttribute('hidden') : el.setAttribute('hidden', true)
 }
 
 Shiny.addCustomMessageHandler('show', showElement)
@@ -10,7 +10,7 @@ let showWaitingMessageTimeout = null
 
 const showWaiting = ({screen_name, show = false} = {}) => {
   const st = document.getElementById("searching-for-tweets")
-  st.classList.toggle('hidden', !show)
+  show ? st.removeAttribute('hidden') : st.setAttribute('hidden', true)
 
   if (screen_name && show) {
     const sn = document.getElementById('searching_screen_name')
@@ -92,12 +92,12 @@ const joinLikedRetweeted = (join) => {
     // join
     tweets[0].querySelector('h2').innerHTML = 'Most Liked & Retweeted'
     tweets[0].classList.add('col-sm-offset-3')
-    tweets[1].classList.add('hidden')
+    tweets[1].setAttribute('hidden', true)
   } else {
     // unjoin
     tweets[0].querySelector('h2').innerHTML = 'Most Liked'
     tweets[0].classList.remove('col-sm-offset-3')
-    tweets[1].classList.remove('hidden')
+    tweets[1].removeAttribute('hidden')
   }
 }
 
